@@ -1,6 +1,35 @@
 from cryptography.fernet import Fernet
 import csv
 
+username = input("Enter user name : ")
+password = input("Enter password :")
+
+users = {
+    "dr123": ["passdoc", "doctor"],
+    "recep01": ["passrec", "receptionist"]
+}
+
+
+if username not in users:
+    print(" User name does not exist ")
+    exit()
+WORD_PASS = users[username][0]
+
+for i in range(2):
+    if password == WORD_PASS:
+        print("Logged in Successfully.")
+        break 
+    elif password  != WORD_PASS: 
+        print("Wrong Passwords  entered .")
+    print(f"Try {i + 1}")
+    password = input("Enter password :")
+    if i == 3:
+        exit()
+
+
+role = users[username][1]
+print("Logged in as: ", role)
+
 def load_key():
     return open("secret.key", "rb").read()
 
