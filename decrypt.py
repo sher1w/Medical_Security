@@ -1,54 +1,87 @@
+import json, getpass, os, csv, logging
+import bcrypt
 from cryptography.fernet import Fernet
-import csv
+from datetime import datetime
 
-username = input("Enter user name : ")
-password = input("Enter password :")
+USERS_FILE = "users.json"
+KEY_FILE = "secret.key"
+CSV_FILE = "medical_data.csv"
+LOG_FILE = "access.log"
 
-users = {
-    "dr123": ["passdoc", "doctor"],
-    "recep01": ["passrec", "receptionist"]
-}
+# === Setup Logging ===
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
+# === Authentication ===
+def load_users():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
+    return {}
 
-if username not in users:
-    print(" User name does not exist ")
-    exit()
-WORD_PASS = users[username][0]
+def login():
+    users = load_users()
+    username = input("Username: ")
+    if username not in users:
+        print("User not found.")
+        return None
+    password = getpass.getpass("Password: ")
+    hashed = users[username]["password"].encode()
 
-for i in range(2):
-    if password == WORD_PASS:
-        print("Logged in Successfully.")
-        break 
-    elif password  != WORD_PASS: 
-        print("Wrong Passwords  entered .")
-    print(f"Try {i + 1}")
-    password = input("Enter password :")
-    if i == 3:
-        exit()
+    if bcrypt.checkpw(password.encode(), hashed):
+        print("Login successful.")
 
+        # ✅ Update last login
+        users[username]["last_login"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
 
-role = users[username][1]
-print("Logged in as: ", role)
+        logging.info(f"{username} ({users[username]['role']}) logged in.")
+        return username, users[username]["role"]
+    else:
+        print("Incorrect password.")
+        return None
 
+# === Decryption ===
 def load_key():
-    return open("secret.key", "rb").read()
+    if not os.path.exists(KEY_FILE):
+        print("Encryption key not found.")
+        exit()
+    with open(KEY_FILE, "rb") as f:
+        return f.read()
 
 def decrypt_data(encrypted_data, key):
-    f = Fernet(key)
-    return f.decrypt(encrypted_data.encode()).decode()
+    return Fernet(key).decrypt(encrypted_data.encode()).decode()
 
+# === Main Function ===
+def main():
+    print("=== Medical Record Viewer ===")
+    auth = login()
+    if not auth:
+        return
+    username, role = auth
 
-with open("medical_data.csv","r") as file:
-    reader =csv.reader(file)
-    header = next(reader,None)
-    for row in reader:
-        if row:
-            enc_data = row[0]
-            break
+    if role not in ["doctor", "patient", "admin"]:
+        print("You are not authorized to view records.")
+        return
 
+    key = load_key()
 
+    if not os.path.exists(CSV_FILE):
+        print("No medical records found.")
+        return
 
-key = load_key()
-dencrypted = decrypt_data(enc_data.strip(), key)
+    print("\n--- Decrypted Medical Records ---")
+    with open(CSV_FILE, "r") as file:
+        reader = csv.reader(file)
+        for i, row in enumerate(reader, start=1):
+            if row:
+                try:
+                    decrypted = decrypt_data(row[0].strip(), key)
+                    print(f"\nRecord {i}: {decrypted}")
+                except Exception as e:
+                    print(f"\nRecord {i}: Error decrypting - {str(e)}")
 
-print(dencrypted)
+    logging.info(f"{username} ({role}) viewed medical records.")
+
+if __name__ == "__main__":
+    main()

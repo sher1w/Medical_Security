@@ -26,7 +26,8 @@ def create_user():
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     users[username] = {
         "password": hashed.decode(),
-        "role": role
+        "role": role,
+        "last_login": "Never"
     }
 
     save_users(users)
