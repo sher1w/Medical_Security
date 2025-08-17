@@ -2,6 +2,17 @@ import json, getpass, os, csv, logging
 import bcrypt
 from cryptography.fernet import Fernet
 from datetime import datetime
+import hashlib
+import random
+
+def send_otp():
+    otp = str(random.randint(100000, 999999))
+    print(f"OTP (demo): {otp}")  # In real use, send via email/SMS
+    return otp
+
+def get_hash(data):
+    return hashlib.sha256(data.encode()).hexdigest()
+
 
 USERS_FILE = "users.json"
 KEY_FILE = "secret.key"
@@ -19,15 +30,19 @@ def load_users():
     return {}
 
 def login():
-    users = load_users()
-    username = input("Username: ")
-    if username not in users:
-        print("User not found.")
-        return None
-    password = getpass.getpass("Password: ")
-    hashed = users[username]["password"].encode()
-
-    if bcrypt.checkpw(password.encode(), hashed):
+   users = load_users()
+   username = input("Username: ")
+   if username not in users:
+    print("User not found.")
+    return None  
+   otp = send_otp()
+   entered = input("Enter OTP: ")
+   if entered != otp:
+    print("Invalid OTP. Login failed.")
+    return None
+   password = getpass.getpass("Password: ")
+   hashed = users[username]["password"].encode()
+   if bcrypt.checkpw(password.encode(), hashed):
         print("Login successful.")
 
         # ✅ Update last login
@@ -37,7 +52,7 @@ def login():
 
         logging.info(f"{username} ({users[username]['role']}) logged in.")
         return username, users[username]["role"]
-    else:
+   else:
         print("Incorrect password.")
         return None
 
@@ -60,10 +75,6 @@ def main():
         return
     username, role = auth
 
-    if role not in ["doctor", "patient", "admin"]:
-        print("You are not authorized to view records.")
-        return
-
     key = load_key()
 
     if not os.path.exists(CSV_FILE):
@@ -77,11 +88,25 @@ def main():
             if row:
                 try:
                     decrypted = decrypt_data(row[0].strip(), key)
-                    print(f"\nRecord {i}: {decrypted}")
-                except Exception as e:
-                    print(f"\nRecord {i}: Error decrypting - {str(e)}")
+                    stored_hash = row[1].strip()
+                    current_hash = get_hash(decrypted)
 
+                    # ✅ Role-based access control here
+                    if role == "patient" and username not in decrypted:
+                        continue  # skip other patients' records
+                    # doctors/admin see all → no filter
+
+                    if stored_hash == current_hash:
+                        print(f"\nRecord {i}: {decrypted} ✅ (Integrity Verified)")
+                    else:
+                        print(f"\nRecord {i}: {decrypted} ⚠️ (Integrity FAILED)")
+
+                except Exception as e:
+                    logging.error(f"Error decrypting record {i}: {e}")
+
+    # ✅ Logging after viewing
     logging.info(f"{username} ({role}) viewed medical records.")
+
 
 if __name__ == "__main__":
     main()

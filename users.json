@@ -12,5 +12,20 @@
         "password": "$2b$12$eI/DG52GniQ12AW5eaAXDudOl2ocAoHPHj1OeK9U86O2L3fvCKkpC",
         "role": "admin",
         "last_login": "Never"
+    },
+    "": {
+        "password": "$2b$12$HsbOWYideR6xOPFJshc75Oq0TwOxBLGtgDREup39E.JATEIcy.eVy",
+        "role": "doctir",
+        "last_login": "Never"
+    },
+    "sherwin Mazarello": {
+        "password": "$2b$12$Ukmz981AK3icXyGFoDxfEuv4Hg1MESv.PsLj.awZT6.dYJa5Jm2QS",
+        "role": "doctor",
+        "last_login": "Never"
+    },
+    "sherwin mazarello": {
+        "password": "$2b$12$hJi2GYUcVh1sb5mzIOPMy.LRrpPtELvwV6fHWBj9OXb19KOlAbRsm",
+        "role": "doctor",
+        "last_login": "2025-08-17 20:44:32"
     }
 }

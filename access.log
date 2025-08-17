@@ -2,3 +2,10 @@ INFO:root:Clark kent (doctor) logged in.
 INFO:root:Clark kent (doctor) added record for patient: Bruce Wayne
 INFO:root:Clark kent (doctor) logged in.
 INFO:root:Clark kent (doctor) viewed medical records.
+INFO:root:sherwin mazarello (doctor) logged in.
+INFO:root:sherwin mazarello (doctor) added record for patient: matt murdock
+INFO:root:sherwin mazarello (doctor) logged in.
+ERROR:root:Error decrypting record 1: 
+ERROR:root:Error decrypting record 2: list index out of range
+ERROR:root:Error decrypting record 3: list index out of range
+INFO:root:sherwin mazarello (doctor) viewed medical records.
