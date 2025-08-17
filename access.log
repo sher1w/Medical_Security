@@ -9,3 +9,9 @@ ERROR:root:Error decrypting record 1:
 ERROR:root:Error decrypting record 2: list index out of range
 ERROR:root:Error decrypting record 3: list index out of range
 INFO:root:sherwin mazarello (doctor) viewed medical records.
+INFO:root:sherwin mazarello (doctor) logged in.
+ERROR:root:Error decrypting record 1: 
+INFO:root:sherwin mazarello (doctor) viewed medical records.
+INFO:root:sherwin mazarello (doctor) logged in.
+ERROR:root:Error decrypting record 1: 
+INFO:root:sherwin mazarello (doctor) viewed medical records.

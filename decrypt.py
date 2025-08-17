@@ -13,7 +13,6 @@ def send_otp():
 def get_hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
 
-
 USERS_FILE = "users.json"
 KEY_FILE = "secret.key"
 CSV_FILE = "medical_data.csv"
@@ -30,19 +29,22 @@ def load_users():
     return {}
 
 def login():
-   users = load_users()
-   username = input("Username: ")
-   if username not in users:
-    print("User not found.")
-    return None  
-   otp = send_otp()
-   entered = input("Enter OTP: ")
-   if entered != otp:
-    print("Invalid OTP. Login failed.")
-    return None
-   password = getpass.getpass("Password: ")
-   hashed = users[username]["password"].encode()
-   if bcrypt.checkpw(password.encode(), hashed):
+    users = load_users()
+    username = input("Username: ")
+    if username not in users:
+        print("User not found.")
+        return None
+
+    # OTP first (kept exactly as you had it)
+    otp = send_otp()
+    entered = input("Enter OTP: ")
+    if entered != otp:
+        print("Invalid OTP. Login failed.")
+        return None
+
+    password = getpass.getpass("Password: ")
+    hashed = users[username]["password"].encode()
+    if bcrypt.checkpw(password.encode(), hashed):
         print("Login successful.")
 
         # ✅ Update last login
@@ -52,7 +54,7 @@ def login():
 
         logging.info(f"{username} ({users[username]['role']}) logged in.")
         return username, users[username]["role"]
-   else:
+    else:
         print("Incorrect password.")
         return None
 
@@ -75,6 +77,16 @@ def main():
         return
     username, role = auth
 
+    # Search options (scoped correctly so patients won't error)
+    search_mode = None
+    search_query = None
+    choice = None
+    if role in ["doctor", "admin"]:
+        choice = input("Do you want to (a) view all records or (b) search? ").lower()
+        if choice == "b":
+            search_mode = input("Search by (name/disease): ").lower()
+            search_query = input("Enter search term: ").lower()
+
     key = load_key()
 
     if not os.path.exists(CSV_FILE):
@@ -85,28 +97,41 @@ def main():
     with open(CSV_FILE, "r") as file:
         reader = csv.reader(file)
         for i, row in enumerate(reader, start=1):
-            if row:
-                try:
-                    decrypted = decrypt_data(row[0].strip(), key)
+            if not row:
+                continue
+            try:
+                decrypted = decrypt_data(row[0].strip(), key)
+
+                # === Filtering logic (inside try) ===
+                if role == "patient":
+                    # simple case-insensitive match; works whether you stored patient username or name
+                    if username.lower() not in decrypted.lower():
+                        continue  # Skip records not belonging to this patient
+
+                if search_mode and search_query:
+                    text = decrypted.lower()
+                    if search_mode == "name" and search_query not in text:
+                        continue
+                    if search_mode == "disease" and search_query not in text:
+                        continue
+
+                # === Integrity Check ===
+                if len(row) > 1:
                     stored_hash = row[1].strip()
                     current_hash = get_hash(decrypted)
-
-                    # ✅ Role-based access control here
-                    if role == "patient" and username not in decrypted:
-                        continue  # skip other patients' records
-                    # doctors/admin see all → no filter
-
                     if stored_hash == current_hash:
                         print(f"\nRecord {i}: {decrypted} ✅ (Integrity Verified)")
                     else:
                         print(f"\nRecord {i}: {decrypted} ⚠️ (Integrity FAILED)")
+                else:
+                    print(f"\nRecord {i}: {decrypted} ⚠️ (No hash stored)")
 
-                except Exception as e:
-                    logging.error(f"Error decrypting record {i}: {e}")
+            except Exception as e:
+                logging.error(f"Error decrypting record {i}: {str(e)}")
+                print(f"\nRecord {i}: Error decrypting - {str(e)}")
 
-    # ✅ Logging after viewing
+    # Optional: keep your previous behavior
     logging.info(f"{username} ({role}) viewed medical records.")
-
 
 if __name__ == "__main__":
     main()

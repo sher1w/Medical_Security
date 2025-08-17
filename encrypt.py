@@ -3,19 +3,10 @@ import bcrypt
 from cryptography.fernet import Fernet
 from datetime import datetime
 import shutil
-from datetime import datetime
-
 import hashlib
-import random
-
-def send_otp():
-    otp = str(random.randint(100000, 999999))
-    print(f"OTP (demo): {otp}")  # In real use, send via email/SMS
-    return otp
 
 def get_hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
-
 
 USERS_FILE = "users.json"
 KEY_FILE = "secret.key"
@@ -33,30 +24,45 @@ def load_users():
     return {}
 
 def login():
-   users = load_users()
-   username = input("Username: ")
-   if username not in users:
+    users = load_users()
+    username = input("Username: ")
+    if username not in users:
         print("User not found.")
         return None
-   otp = send_otp()
-   entered = input("Enter OTP: ")
-   if entered != otp:
-        print("Invalid OTP. Login failed.")
+
+    # Check if account is locked
+    if users[username].get("locked", False):
+        print("Account locked due to multiple failed login attempts. Contact admin.")
         return None
-   password = getpass.getpass("Password: ")
-   hashed = users[username]["password"].encode()
-   if bcrypt.checkpw(password.encode(), hashed):
+
+    password = getpass.getpass("Password: ")
+    hashed = users[username]["password"].encode()
+
+    if bcrypt.checkpw(password.encode(), hashed):
         print("Login successful.")
 
-        # ✅ Update last login
+        # ✅ Reset failed attempts on success
+        users[username]["failed_attempts"] = 0
+        users[username]["locked"] = False
         users[username]["last_login"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         with open(USERS_FILE, "w") as f:
             json.dump(users, f, indent=4)
 
         logging.info(f"{username} ({users[username]['role']}) logged in.")
         return username, users[username]["role"]
-   else:
+    else:
         print("Incorrect password.")
+
+        # Increment failed attempts
+        users[username]["failed_attempts"] = users[username].get("failed_attempts", 0) + 1
+        if users[username]["failed_attempts"] >= 3:
+            users[username]["locked"] = True
+            print("Account locked due to too many failed attempts.")
+
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
+
         return None
 
 # === Encryption ===
@@ -94,7 +100,8 @@ def main():
 
     key = load_key()
     encrypted = encrypt_data(data, key)
-    # appending
+
+    # ✅ Save encrypted record with hash
     hash_val = get_hash(data)
     with open(CSV_FILE, "a", newline="") as file:
         writer = csv.writer(file)
@@ -102,10 +109,12 @@ def main():
 
     print("Encrypted medical data saved.")
     logging.info(f"{username} ({role}) added record for patient: {name}")
-    backup_name = f"backup/medical_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    os.makedirs("backup", exist_ok=True); shutil.copy(CSV_FILE, backup_name)
-    print(f"Backup created: {backup_name}")
 
+    # ✅ Backup
+    backup_name = f"backup/medical_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    os.makedirs("backup", exist_ok=True)
+    shutil.copy(CSV_FILE, backup_name)
+    print(f"Backup created: {backup_name}")
 
 if __name__ == "__main__":
     main()
