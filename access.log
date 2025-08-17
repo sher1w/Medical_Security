@@ -15,3 +15,7 @@ INFO:root:sherwin mazarello (doctor) viewed medical records.
 INFO:root:sherwin mazarello (doctor) logged in.
 ERROR:root:Error decrypting record 1: 
 INFO:root:sherwin mazarello (doctor) viewed medical records.
+INFO:root:foggy (patient) logged in.
+INFO:root:foggy (patient) logged in.
+ERROR:root:Error decrypting record 1: 
+INFO:root:foggy (patient) viewed medical records.

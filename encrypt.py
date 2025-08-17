@@ -110,6 +110,23 @@ def main():
     print("Encrypted medical data saved.")
     logging.info(f"{username} ({role}) added record for patient: {name}")
 
+    # === Auto-register patient as user if not exists ===
+    users = load_users()
+    patient_username = name.lower()
+    if patient_username not in users:
+        default_password = "patient123"  # default password
+        hashed_pw = bcrypt.hashpw(default_password.encode(), bcrypt.gensalt()).decode()
+        users[patient_username] = {
+            "password": hashed_pw,
+            "role": "patient",
+            "last_login": "Never",
+            "failed_attempts": 0,
+            "locked": False
+        }
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
+        print(f"Patient account '{patient_username}' created with default password: {default_password}")
+
     # ✅ Backup
     backup_name = f"backup/medical_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     os.makedirs("backup", exist_ok=True)

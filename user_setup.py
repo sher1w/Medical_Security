@@ -27,7 +27,9 @@ def create_user():
     users[username] = {
         "password": hashed.decode(),
         "role": role,
-        "last_login": "Never"
+        "last_login": "Never",
+        "failed_attempts": 0,   # ✅ added for lockout tracking
+        "locked": False         # ✅ added for lockout tracking
     }
 
     save_users(users)

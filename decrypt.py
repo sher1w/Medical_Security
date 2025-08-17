@@ -3,12 +3,6 @@ import bcrypt
 from cryptography.fernet import Fernet
 from datetime import datetime
 import hashlib
-import random
-
-def send_otp():
-    otp = str(random.randint(100000, 999999))
-    print(f"OTP (demo): {otp}")  # In real use, send via email/SMS
-    return otp
 
 def get_hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
@@ -35,20 +29,22 @@ def login():
         print("User not found.")
         return None
 
-    # OTP first (kept exactly as you had it)
-    otp = send_otp()
-    entered = input("Enter OTP: ")
-    if entered != otp:
-        print("Invalid OTP. Login failed.")
+    # 🔒 Check if account is locked
+    if users[username].get("locked", False):
+        print("Account locked due to multiple failed login attempts. Contact admin.")
         return None
 
     password = getpass.getpass("Password: ")
     hashed = users[username]["password"].encode()
+
     if bcrypt.checkpw(password.encode(), hashed):
         print("Login successful.")
 
-        # ✅ Update last login
+        # ✅ Reset failed attempts on success
+        users[username]["failed_attempts"] = 0
+        users[username]["locked"] = False
         users[username]["last_login"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         with open(USERS_FILE, "w") as f:
             json.dump(users, f, indent=4)
 
@@ -56,6 +52,16 @@ def login():
         return username, users[username]["role"]
     else:
         print("Incorrect password.")
+
+        # Increment failed attempts
+        users[username]["failed_attempts"] = users[username].get("failed_attempts", 0) + 1
+        if users[username]["failed_attempts"] >= 3:
+            users[username]["locked"] = True
+            print("Account locked due to too many failed attempts.")
+
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
+
         return None
 
 # === Decryption ===
@@ -77,10 +83,9 @@ def main():
         return
     username, role = auth
 
-    # Search options (scoped correctly so patients won't error)
+    # Search options (doctors & admins only)
     search_mode = None
     search_query = None
-    choice = None
     if role in ["doctor", "admin"]:
         choice = input("Do you want to (a) view all records or (b) search? ").lower()
         if choice == "b":
@@ -102,11 +107,11 @@ def main():
             try:
                 decrypted = decrypt_data(row[0].strip(), key)
 
-                # === Filtering logic (inside try) ===
+                # === Filtering logic ===
                 if role == "patient":
-                    # simple case-insensitive match; works whether you stored patient username or name
-                    if username.lower() not in decrypted.lower():
-                        continue  # Skip records not belonging to this patient
+                    # match using PatientUsername field stored in encrypt.py
+                    if f"patientusername: {username.lower()}" not in decrypted.lower():
+                        continue  # skip records not belonging to this patient
 
                 if search_mode and search_query:
                     text = decrypted.lower()
@@ -130,7 +135,6 @@ def main():
                 logging.error(f"Error decrypting record {i}: {str(e)}")
                 print(f"\nRecord {i}: Error decrypting - {str(e)}")
 
-    # Optional: keep your previous behavior
     logging.info(f"{username} ({role}) viewed medical records.")
 
 if __name__ == "__main__":

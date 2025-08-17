@@ -27,5 +27,12 @@
         "password": "$2b$12$hJi2GYUcVh1sb5mzIOPMy.LRrpPtELvwV6fHWBj9OXb19KOlAbRsm",
         "role": "doctor",
         "last_login": "2025-08-17 21:04:31"
+    },
+    "foggy": {
+        "password": "$2b$12$f7O6E0KG/wzu4JgN5632M.5QwNquBrBox3ddLK4wsG7M9WRl/7T5y",
+        "role": "patient",
+        "last_login": "2025-08-17 21:25:12",
+        "failed_attempts": 0,
+        "locked": false
     }
 }
