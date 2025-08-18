@@ -1,0 +1,4 @@
+{"details":"success","digest":"5c37073d76257cdfc6542a7260e622390a30e2eea36c5554c98a93158367d827","event":"login","prev":null,"role":"doctor","ts":1755526861,"user":"sherwin mazarello"}
+{"details":"patient=Karen Page","digest":"7836020613dd7426a159563e27c5a2d2b64d0b275138f6e6fc2fdd12e4ee7f9b","event":"add_record","prev":"5c37073d76257cdfc6542a7260e622390a30e2eea36c5554c98a93158367d827","role":"doctor","ts":1755526890,"user":"sherwin mazarello"}
+{"details":"success","digest":"1685be549cbd693afcf7ee4a71fe6d196ebf2cd04700126bda03761c69f01222","event":"login","prev":"7836020613dd7426a159563e27c5a2d2b64d0b275138f6e6fc2fdd12e4ee7f9b","role":"doctor","ts":1755527100,"user":"sherwin mazarello"}
+{"details":"success","digest":"cda04f75f066c3975edb7b0012525865e46b022c3bef80f3857a8c3285065abe","event":"view_records","prev":"1685be549cbd693afcf7ee4a71fe6d196ebf2cd04700126bda03761c69f01222","role":"doctor","ts":1755527104,"user":"sherwin mazarello"}

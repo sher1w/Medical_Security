@@ -1,5 +1,6 @@
 import json, getpass, os
 import bcrypt
+from audit import verify_log   # ✅ Import audit verifier
 
 USERS_FILE = "users.json"
 LOG_FILE = "access.log"
@@ -31,19 +32,27 @@ def login():
         return None
 
 def main():
-    print("=== View Access Logs ===")
+    print("=== View Logs ===")
     user = login()
     if not user:
         return
 
-    if not os.path.exists(LOG_FILE):
-        print("No logs available.")
-        return
+    # ✅ Show access.log first
+    if os.path.exists(LOG_FILE):
+        print("\n--- Access Log Entries ---")
+        with open(LOG_FILE, "r") as f:
+            for line in f:
+                print(line.strip())
+    else:
+        print("\nNo access logs found.")
 
-    print("\n--- Access Log Entries ---")
-    with open(LOG_FILE, "r") as f:
-        for line in f:
-            print(line.strip())
+    # ✅ Verify audit.log integrity
+    print("\n--- Audit Log Verification ---")
+    ok, total, bad_idx, reason = verify_log()
+    if ok:
+        print(f"[Audit Verify] OK — {total} entries, chain intact.")
+    else:
+        print(f"[Audit Verify] FAIL at entry {bad_idx}: {reason}")
 
 if __name__ == "__main__":
     main()

@@ -19,3 +19,9 @@ INFO:root:foggy (patient) logged in.
 INFO:root:foggy (patient) logged in.
 ERROR:root:Error decrypting record 1: 
 INFO:root:foggy (patient) viewed medical records.
+INFO:root:sherwin mazarello (doctor) logged in.
+INFO:root:sherwin mazarello (doctor) added record for patient: Karen Page
+INFO:root:sherwin mazarello (doctor) logged in.
+INFO:root:sherwin mazarello (doctor) logged in.
+ERROR:root:Error decrypting record 1: 
+INFO:root:sherwin mazarello (doctor) viewed medical records.

@@ -4,6 +4,8 @@ from cryptography.fernet import Fernet
 from datetime import datetime
 import shutil
 import hashlib
+from audit import write_entry
+
 
 def get_hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
@@ -87,6 +89,8 @@ def main():
     if not auth:
         return
     username, role = auth
+    write_entry("login", "success", username, role)
+
 
     if role not in ["doctor", "receptionist", "admin"]:
         print("You are not authorized to add data.")
@@ -109,6 +113,7 @@ def main():
 
     print("Encrypted medical data saved.")
     logging.info(f"{username} ({role}) added record for patient: {name}")
+    write_entry("add_record", f"patient={name}", username, role)
 
     # === Auto-register patient as user if not exists ===
     users = load_users()

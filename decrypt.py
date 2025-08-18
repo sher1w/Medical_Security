@@ -3,9 +3,12 @@ import bcrypt
 from cryptography.fernet import Fernet
 from datetime import datetime
 import hashlib
+from audit import write_entry   # ✅ Audit log support
+
 
 def get_hash(data):
     return hashlib.sha256(data.encode()).hexdigest()
+
 
 USERS_FILE = "users.json"
 KEY_FILE = "secret.key"
@@ -15,12 +18,14 @@ LOG_FILE = "access.log"
 # === Setup Logging ===
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
+
 # === Authentication ===
 def load_users():
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, "r") as f:
             return json.load(f)
     return {}
+
 
 def login():
     users = load_users()
@@ -40,6 +45,9 @@ def login():
     if bcrypt.checkpw(password.encode(), hashed):
         print("Login successful.")
 
+        # ✅ Fetch role immediately
+        role = users[username]["role"]
+
         # ✅ Reset failed attempts on success
         users[username]["failed_attempts"] = 0
         users[username]["locked"] = False
@@ -48,8 +56,10 @@ def login():
         with open(USERS_FILE, "w") as f:
             json.dump(users, f, indent=4)
 
-        logging.info(f"{username} ({users[username]['role']}) logged in.")
-        return username, users[username]["role"]
+        logging.info(f"{username} ({role}) logged in.")
+        write_entry("login", "success", username, role)   # ✅ Single login log
+
+        return username, role
     else:
         print("Incorrect password.")
 
@@ -64,6 +74,7 @@ def login():
 
         return None
 
+
 # === Decryption ===
 def load_key():
     if not os.path.exists(KEY_FILE):
@@ -72,8 +83,10 @@ def load_key():
     with open(KEY_FILE, "rb") as f:
         return f.read()
 
+
 def decrypt_data(encrypted_data, key):
     return Fernet(key).decrypt(encrypted_data.encode()).decode()
+
 
 # === Main Function ===
 def main():
@@ -109,7 +122,7 @@ def main():
 
                 # === Filtering logic ===
                 if role == "patient":
-                    # match using PatientUsername field stored in encrypt.py
+                    # match patientusername (added in encrypt.py)
                     if f"patientusername: {username.lower()}" not in decrypted.lower():
                         continue  # skip records not belonging to this patient
 
@@ -136,6 +149,8 @@ def main():
                 print(f"\nRecord {i}: Error decrypting - {str(e)}")
 
     logging.info(f"{username} ({role}) viewed medical records.")
+    write_entry("view_records", "success", username, role)   # ✅ Record viewing action
+
 
 if __name__ == "__main__":
     main()
