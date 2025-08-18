@@ -43,5 +43,12 @@
         "last_login": "Never",
         "failed_attempts": 0,
         "locked": false
+    },
+    "matt murdock": {
+        "password": "$2b$12$Wo5UabtOhCHj6LnEBXr./.Zij1I6zuEFR2/M4MgZcw6upXbN5Vaoe",
+        "role": "patient",
+        "last_login": "Never",
+        "failed_attempts": 0,
+        "locked": false
     }
 }
